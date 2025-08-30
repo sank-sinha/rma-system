@@ -1,0 +1,1 @@
+This directory now only contains the main CSV file for RMA data.
