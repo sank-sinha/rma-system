@@ -5,11 +5,17 @@ import { ExcelUploader } from './components/ExcelUploader';
 import { TestingTab } from './components/TestingTab';
 import { ResultsTab } from './components/ResultsTab';
 import { Dashboard } from './components/Dashboard';
+import { CustomerPortal } from './components/CustomerPortal';
+import { TesterLogin } from './components/TesterLogin';
 import { RMARecord, TestResult, Product } from './types';
 import { PRODUCTS } from './data/products';
 import { ApiService } from './services/api';
+import { Shield } from 'lucide-react';
 
 function App() {
+  const [userMode, setUserMode] = useState<'customer' | 'tester'>('customer');
+  const [showTesterLogin, setShowTesterLogin] = useState(false);
+  const [testerEmail, setTesterEmail] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'testing' | 'results' | 'dashboard'>('testing');
   const [rmaData, setRmaData] = useState<RMARecord[]>([]);
   const [products] = useState<Product[]>(PRODUCTS);
@@ -92,8 +98,62 @@ function App() {
     }
   };
 
+  const handleTesterLogin = (email: string) => {
+    setTesterEmail(email);
+    setUserMode('tester');
+    setShowTesterLogin(false);
+  };
+
+  const handleTesterLogout = () => {
+    setTesterEmail(null);
+    setUserMode('customer');
+    setActiveTab('testing');
+  };
+
+  // Show customer portal by default
+  if (userMode === 'customer') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={() => setShowTesterLogin(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-smooth shadow-sm"
+          >
+            <Shield className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-gray-700">Tester Login</span>
+          </button>
+        </div>
+        
+        <CustomerPortal rmaData={rmaData} testResults={testResults} />
+        
+        {showTesterLogin && (
+          <TesterLogin
+            onLogin={handleTesterLogin}
+            onClose={() => setShowTesterLogin(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Show tester interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Shield className="w-6 h-6 text-blue-600" />
+            <span className="font-semibold text-gray-900">Tester Interface</span>
+            <span className="text-sm text-gray-500">({testerEmail})</span>
+          </div>
+          <button
+            onClick={handleTesterLogout}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-smooth"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main className="relative">
