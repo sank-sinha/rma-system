@@ -71,12 +71,15 @@ export function ExcelUploader({ onDataLoaded, hasData }: ExcelUploaderProps) {
   const [originalFileName, setOriginalFileName] = React.useState<string>('');
   const [originalCsvData, setOriginalCsvData] = React.useState<string[][]>([]);
   const [originalHeaders, setOriginalHeaders] = React.useState<string[]>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setIsUploading(true);
     setOriginalFileName(file.name);
+    console.log('Starting file upload:', file.name);
 
     Papa.parse(file, {
       header: true,                    // use first line as headers
@@ -139,15 +142,19 @@ export function ExcelUploader({ onDataLoaded, hasData }: ExcelUploaderProps) {
           console.log('Total mapped records:', mapped.length);
 
           setFileStats({ totalRows: rows.length, validRMAs: mapped.length });
+          console.log('Calling onDataLoaded with mapped data');
           onDataLoaded(mapped, file.name, { totalRows: rows.length, validRMAs: mapped.length });
+          setIsUploading(false);
         } catch (err) {
           console.error('Mapping error:', err);
           alert(`Error processing CSV: ${err}`);
+          setIsUploading(false);
         }
       },
       error: (err) => {
         console.error('Papa parse error:', err);
         alert(`Error parsing CSV: ${err}`);
+        setIsUploading(false);
       },
     });
 
@@ -228,14 +235,15 @@ export function ExcelUploader({ onDataLoaded, hasData }: ExcelUploaderProps) {
             Our system will automatically parse and organize your data.
           </p>
 
-          <label className="inline-flex items-center space-x-3 px-8 py-4 gradient-bg text-white rounded-2xl hover:shadow-xl cursor-pointer transition-smooth font-semibold text-lg group">
+          <label className={`inline-flex items-center space-x-3 px-8 py-4 gradient-bg text-white rounded-2xl hover:shadow-xl cursor-pointer transition-smooth font-semibold text-lg group ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <Upload className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span>Choose CSV File</span>
+            <span>{isUploading ? 'Processing...' : 'Choose CSV File'}</span>
             <input
               type="file"
               accept=".csv"
               onChange={handleFileUpload}
               className="hidden"
+              disabled={isUploading}
             />
           </label>
 

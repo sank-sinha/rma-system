@@ -20,6 +20,10 @@ function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Testing API connection...');
+        const status = await ApiService.getSystemStatus();
+        console.log('API Status:', status);
+        
         const [rmaRecords, testResults] = await Promise.all([
           ApiService.getRMARecords(),
           ApiService.getTestResults()
@@ -30,54 +34,33 @@ function App() {
         console.log(`Loaded ${rmaRecords.length} RMA records and ${testResults.length} test results from backend`);
       } catch (error) {
         console.error('Error loading data from backend:', error);
-        // Fallback to localStorage if backend is not available
-        const savedRMAData = localStorage.getItem('rmaData');
-        const savedTestResults = localStorage.getItem('testResults');
-        
-        if (savedRMAData) {
-          try {
-            const parsedRMAData = JSON.parse(savedRMAData);
-            setRmaData(parsedRMAData);
-          } catch (error) {
-            console.error('Error parsing saved RMA data:', error);
-          }
-        }
-        
-        if (savedTestResults) {
-          try {
-            const parsedTestResults = JSON.parse(savedTestResults);
-            setTestResults(parsedTestResults);
-          } catch (error) {
-            console.error('Error parsing saved test results:', error);
-          }
-        }
+        console.error('API Base URL:', import.meta.env.VITE_API_BASE_URL);
+        // No localStorage fallback - all data must come from database
+        console.log('Backend connection failed. All data will be loaded from database only.');
+        alert('Cannot connect to database. Please check your internet connection.');
       }
     };
     
     loadData();
   }, []);
 
-  // Keep localStorage as backup
-  useEffect(() => {
-    if (rmaData.length > 0) {
-      localStorage.setItem('rmaData', JSON.stringify(rmaData));
-    }
-  }, [rmaData]);
-
-  useEffect(() => {
-    if (testResults.length > 0) {
-      localStorage.setItem('testResults', JSON.stringify(testResults));
-    }
-  }, [testResults]);
+  // No localStorage backup - all data stored in database only
 
   const handleDataLoaded = async (data: RMARecord[], filename: string, stats: { totalRows: number; validRMAs: number }) => {
+    console.log('handleDataLoaded called with:', { dataLength: data.length, filename, stats });
+    
     try {
-      await ApiService.uploadCSVData(data, filename, stats);
+      console.log('Attempting to upload to backend...');
+      const result = await ApiService.uploadCSVData(data, filename, stats);
+      console.log('Backend upload successful:', result);
+      
       setRmaData(data);
       setSelectedRMA(null);
       console.log(`Uploaded ${data.length} RMA records from ${filename} to backend`);
     } catch (error) {
       console.error('Error uploading to backend:', error);
+      alert(`Backend upload failed: ${error}. Data loaded locally only.`);
+      
       // Fallback to local storage
       setRmaData(data);
       setSelectedRMA(null);
@@ -86,19 +69,26 @@ function App() {
   };
 
   const handleSubmitResult = async (result: TestResult) => {
+    console.log('Submitting test result:', result);
+    
     try {
-      await ApiService.submitTestResult(result);
-      setTestResults(prev => [...prev, result]);
-      alert(`Test result submitted successfully for ${result.rmaNumber}`);
+      console.log('Attempting to submit to backend...');
+      const response = await ApiService.submitTestResult(result);
+      console.log('Backend submission successful:', response);
+      
+      // Refresh test results from backend to ensure sync
+      const updatedResults = await ApiService.getTestResults();
+      setTestResults(updatedResults);
+      
+      alert(`Test result submitted successfully to database for ${result.rmaNumber}`);
       setActiveTab('results');
       setSelectedRMA(null);
     } catch (error) {
-      console.error('Error submitting test result:', error);
-      // Fallback to local storage
-      setTestResults(prev => [...prev, result]);
-      alert(`Test result submitted locally for ${result.rmaNumber} (backend unavailable)`);
-      setActiveTab('results');
-      setSelectedRMA(null);
+      console.error('Error submitting test result to backend:', error);
+      alert(`Failed to submit to database: ${error}. Please check your connection and try again.`);
+      
+      // Don't fall back to localStorage - force user to fix the connection
+      // This ensures all data goes to the shared database
     }
   };
 
