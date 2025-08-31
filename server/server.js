@@ -35,7 +35,6 @@ db.serialize(() => {
     status TEXT,
     ordered_from TEXT,
     date_ordered TEXT,
-    customer_phone TEXT,
     order_number TEXT,
     invoice TEXT,
     invoice_link TEXT,
