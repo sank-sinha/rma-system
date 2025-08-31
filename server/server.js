@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['https://rma-system-one.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+  origin: ['https://rma-system-one.vercel.app', 'https://rma-system-i7n0jiut0-sank-sinhas-projects.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
