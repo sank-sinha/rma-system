@@ -1,6 +1,6 @@
 import { RMARecord, TestResult } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://rma-system-ry43.onrender.com/api';
 
 export class ApiService {
   static async uploadCSVData(data: RMARecord[], filename: string, stats: { totalRows: number; validRMAs: number }) {
